@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import prisma from "../utils/prisma";
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken";
-import { AuthRequest, SafeUser } from "../types";
+import { AuthRequest } from "../types";
 
 
 export const register = async (req: Request, res: Response) => {
@@ -46,6 +46,42 @@ export const register = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Registration error:', error);
         res.status(500).json({ message: 'Server error during registration' });
+    }
+}
+
+export const login = async (req: AuthRequest, res: Response) => {
+    try {
+        const { email, password } = req.body
+
+        // find user by email
+        const user = await prisma.user.findFirst({
+            where: { email }
+        })
+
+        if (!user) {
+            return res.status(400).json({ message: "Email or password is wrong" })
+        }
+
+        // check password
+        const isMatched = await bcrypt.compare(password, user.password)
+        if (!isMatched) {
+            return res.status(400).json({ message: "Email or password is wrong" })
+        }
+
+        // created jwt token
+        const token = generateToken(user.id, user.email, user.username)
+
+        // return without passwrod
+        const { password: _, ...safeUser } = user
+
+        res.json({
+            user: safeUser,
+            token
+        })
+
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Server error during login' });
     }
 }
 
