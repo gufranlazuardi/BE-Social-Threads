@@ -85,6 +85,31 @@ export const login = async (req: AuthRequest, res: Response) => {
     }
 }
 
+// Get current user
+export const getMe = async (req: AuthRequest, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: 'Not authenticated' });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.id }
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Return user without password
+        const { password, ...safeUser } = user;
+
+        res.json(safeUser);
+    } catch (error) {
+        console.error('Get user error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 const generateToken = (id: string, email: string, username: string): string => {
     return jwt.sign(
         { id, email, username },
