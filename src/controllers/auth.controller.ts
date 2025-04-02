@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { AuthRequest } from "../types";
 
 
+
 export const register = async (req: Request, res: Response) => {
     try {
         const { email, username, password, name } = req.body
@@ -59,13 +60,27 @@ export const login = async (req: AuthRequest, res: Response) => {
         })
 
         if (!user) {
-            return res.status(400).json({ message: "Email or password is wrong" })
+            return res.status(400).json({
+                status: "Failed",
+                code: 400,
+                message: "Invalid email or password",
+                meta: {
+                    timestamp: new Date().toISOString()
+                }
+            });
         }
 
         // check password
         const isMatched = await bcrypt.compare(password, user.password)
         if (!isMatched) {
-            return res.status(400).json({ message: "Email or password is wrong" })
+            return res.status(400).json({
+                status: "Failed",
+                code: 400,
+                message: "Invalid email or password",
+                meta: {
+                    timestamp: new Date().toISOString()
+                }
+            });
         }
 
         // created jwt token
@@ -75,13 +90,25 @@ export const login = async (req: AuthRequest, res: Response) => {
         const { password: _, ...safeUser } = user
 
         res.json({
-            user: safeUser,
-            token
+            status: "Success",
+            code: 200,
+            message: "Login succesfully",
+            meta: {
+                timeStamp: new Date().toUTCString()
+            },
+            data: safeUser, token
         })
 
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ message: 'Server error during login' });
+        res.json({
+            status: "Failed",
+            code: 500,
+            message: "Failed to login",
+            meta: {
+                timeStamp: new Date().toUTCString()
+            },
+        })
     }
 }
 
@@ -103,7 +130,15 @@ export const getMe = async (req: AuthRequest, res: Response) => {
         // Return user without password
         const { password, ...safeUser } = user;
 
-        res.json(safeUser);
+        res.status(200).json({
+            status: "Success",
+            code: 200,
+            message: "Successfully get current user",
+            meta: {
+                timeStamp: new Date().toUTCString()
+            },
+            data: safeUser
+        })
     } catch (error) {
         console.error('Get user error:', error);
         res.status(500).json({ message: 'Server error' });
