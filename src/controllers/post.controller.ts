@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../utils/prisma";
 import { AuthRequest } from "../types";
+import { v2 as cloudinary } from 'cloudinary';
 
 
 export const getAllPosts = async (req: Request, res: Response) => {
@@ -135,11 +136,54 @@ export const getPostById = async (req: AuthRequest, res: Response) => {
 }
 
 export const createPost = async (req: AuthRequest, res: Response) => {
+
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_API_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+
     try {
-        const { content, imageUrl } = req.body
+        const { content } = req.body
+        const file = req.file
 
         if (!req.user) {
-            return res.status(401).json({ message: "Not authenticated" })
+            return res.status(401).json({
+                status: "Failed",
+                code: 401,
+                message: "Not authenticated",
+                meta: {
+                    timeStamp: new Date().toUTCString()
+                }
+            });
+        }
+
+        let imageUrl = null;
+
+        if (file) {
+            const base64Image = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+
+            try {
+                const uploadResult = await cloudinary.uploader.upload(base64Image, {
+                    public_id: content
+                })
+
+                imageUrl = cloudinary.url(uploadResult.public_id, {
+                    fetch_format: 'auto',
+                    quality: 'auto'
+                })
+
+            } catch (error) {
+                console.error("Failed to upload image to Cloudinary:", error);
+                return res.status(400).json({
+                    status: "Failed",
+                    code: 400,
+                    message: "Failed to upload image",
+                    meta: {
+                        timeStamp: new Date().toUTCString()
+                    }
+                });
+            }
         }
 
         const post = await prisma.post.create({
