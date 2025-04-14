@@ -135,7 +135,6 @@ export const udpateUser = async (req: AuthRequest, res: Response) => {
                 username: true,
                 email: true,
                 bio: true,
-                password: true,
                 createdAt: true,
                 updatedAt: true
             }
