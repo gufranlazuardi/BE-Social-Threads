@@ -4,6 +4,7 @@ import morgan from "morgan"
 import { authRoutes } from "./routes/auth.route"
 import { userRoutes } from "./routes/user.route"
 import { postRouter } from "./routes/post.route"
+import { commentRoutes } from "./routes/comment.route"
 
 
 const app = express()
@@ -17,6 +18,7 @@ app.use(cors())
 app.use('/api/auth', authRoutes)
 app.use('/api/user', userRoutes)
 app.use('/api/post', postRouter)
+app.use('/api/comment', commentRoutes)
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
