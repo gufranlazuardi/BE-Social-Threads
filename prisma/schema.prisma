@@ -47,6 +47,11 @@ model Comment {
   authorId  String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    String
+
+  // relasi reply comment
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
 }
 
 model Like {
