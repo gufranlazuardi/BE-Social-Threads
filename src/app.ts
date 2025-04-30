@@ -5,9 +5,11 @@ import { authRoutes } from "./routes/auth.route"
 import { userRoutes } from "./routes/user.route"
 import { postRouter } from "./routes/post.route"
 import { commentRoutes } from "./routes/comment.route"
+import http from "http"
 
 
 const app = express()
+const server = http
 
 // middleware
 app.use(express.json())

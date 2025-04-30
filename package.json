@@ -21,7 +21,8 @@
         "express-validator": "^7.0.1",
         "jsonwebtoken": "^9.0.2",
         "morgan": "^1.10.0",
-        "multer": "^1.4.5-lts.2"
+        "multer": "^1.4.5-lts.2",
+        "socket.io": "^4.8.1"
     },
     "devDependencies": {
         "@types/bcryptjs": "^2.4.6",
@@ -31,6 +32,7 @@
         "@types/morgan": "^1.9.9",
         "@types/multer": "^1.4.12",
         "@types/node": "^20.17.30",
+        "@types/socket.io": "^3.0.1",
         "prisma": "^5.22.0",
         "ts-node-dev": "^2.0.0",
         "typescript": "^5.8.2"

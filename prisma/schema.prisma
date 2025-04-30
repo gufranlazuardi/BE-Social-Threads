@@ -11,19 +11,21 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  username  String    @unique
-  password  String
-  name      String?
-  bio       String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  posts     Post[]
-  comments  Comment[]
-  likes     Like[]
-  followers Follow[]  @relation("following")
-  following Follow[]  @relation("follower")
+  id                       String                    @id @default(uuid())
+  email                    String                    @unique
+  username                 String                    @unique
+  password                 String
+  name                     String?
+  bio                      String?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  posts                    Post[]
+  comments                 Comment[]
+  likes                    Like[]
+  followers                Follow[]                  @relation("following")
+  following                Follow[]                  @relation("follower")
+  messages                 Message[]
+  conversationParticipants ConversationParticipant[]
 }
 
 model Post {
@@ -74,4 +76,35 @@ model Follow {
   createdAt   DateTime @default(now())
 
   @@unique([followerId, followingId])
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, conversationId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  content        String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  senderId       String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  createdAt      DateTime     @default(now())
+  read           Boolean      @default(false)
 }
