@@ -1,13 +1,39 @@
-// src/socketServer.ts
+
 import { Server as HttpServer } from 'http';
-import { Server } from 'socket.io';
-import { PrismaClient } from '@prisma/client';
+import { Server, Socket } from 'socket.io';
+import { PrismaClient, Message, Conversation, ConversationParticipant } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 interface User {
     userId: string;
     socketId: string;
+}
+
+interface MessageData {
+    senderId: string;
+    receiverId: string;
+    content: string;
+    conversationId?: string;
+}
+
+interface TypingData {
+    senderId: string;
+    receiverId: string;
+    conversationId: string;
+}
+
+interface ReadData {
+    userId: string;
+    conversationId: string;
+}
+
+interface MessageWithSender extends Message {
+    sender: {
+        id: string;
+        username: string;
+        name: string;
+    };
 }
 
 class SocketService {
@@ -27,7 +53,7 @@ class SocketService {
     }
 
     private setupSocketEvents(): void {
-        this.io.on('connection', (socket) => {
+        this.io.on('connection', (socket: Socket) => {
             console.log(`User connected: ${socket.id}`);
 
             // User connects with their ID
@@ -38,17 +64,12 @@ class SocketService {
             });
 
             // Handle new message
-            socket.on('sendMessage', async (data: {
-                senderId: string,
-                receiverId: string,
-                content: string,
-                conversationId?: string
-            }) => {
+            socket.on('sendMessage', async (data: MessageData) => {
                 try {
                     const { senderId, receiverId, content, conversationId } = data;
 
                     // Find or create conversation
-                    let conversation;
+                    let conversation: Conversation | null = null;
 
                     if (conversationId) {
                         conversation = await prisma.conversation.findUnique({
@@ -109,12 +130,16 @@ class SocketService {
                         }
                     }
 
+                    if (!conversation) {
+                        throw new Error('Failed to find or create conversation');
+                    }
+
                     // Save message to database
                     const message = await prisma.message.create({
                         data: {
                             content,
                             senderId,
-                            conversationId: conversation?.id || ''
+                            conversationId: conversation.id
                         },
                         include: {
                             sender: {
@@ -125,7 +150,7 @@ class SocketService {
                                 }
                             }
                         }
-                    });
+                    }) as MessageWithSender;
 
                     // Send message to receiver if they're online
                     const receiver = this.getUser(receiverId);
@@ -143,7 +168,7 @@ class SocketService {
             });
 
             // Handle typing indicators
-            socket.on('typing', (data: { senderId: string, receiverId: string, conversationId: string }) => {
+            socket.on('typing', (data: TypingData) => {
                 const receiver = this.getUser(data.receiverId);
                 if (receiver) {
                     this.io.to(receiver.socketId).emit('userTyping', {
@@ -154,7 +179,7 @@ class SocketService {
             });
 
             // Handle stop typing
-            socket.on('stopTyping', (data: { senderId: string, receiverId: string, conversationId: string }) => {
+            socket.on('stopTyping', (data: TypingData) => {
                 const receiver = this.getUser(data.receiverId);
                 if (receiver) {
                     this.io.to(receiver.socketId).emit('userStopTyping', {
@@ -165,7 +190,7 @@ class SocketService {
             });
 
             // Mark messages as read
-            socket.on('markAsRead', async (data: { userId: string, conversationId: string }) => {
+            socket.on('markAsRead', async (data: ReadData) => {
                 try {
                     await prisma.message.updateMany({
                         where: {
@@ -183,7 +208,7 @@ class SocketService {
                     });
 
                     if (conversation) {
-                        conversation.participants.forEach(participant => {
+                        conversation.participants.forEach((participant: ConversationParticipant) => {
                             if (participant.userId !== data.userId) {
                                 const user = this.getUser(participant.userId);
                                 if (user) {
