@@ -30,5 +30,10 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     });
 });
 
+// test for root "/"
+app.get("/", (req, res) => {
+    res.status(200).send("Social Media API is running");
+});
+
 
 export default app
