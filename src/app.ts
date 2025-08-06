@@ -22,6 +22,11 @@ app.use('/api/user', userRoutes)
 app.use('/api/post', postRouter)
 app.use('/api/comment', commentRoutes)
 
+// test for root "/"
+app.get("/", (req, res) => {
+    res.status(200).send("Social Media API is running");
+});
+
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error(err.stack);
@@ -30,10 +35,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     });
 });
 
-// test for root "/"
-app.get("/", (req, res) => {
-    res.status(200).send("Social Media API is running");
-});
 
 
 export default app
